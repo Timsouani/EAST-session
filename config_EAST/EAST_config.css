@@ -2,26 +2,17 @@
     Le slide d'erreur est caché  */
     
 #slideshow {
-
-	display: block;
-	
+  display: block;
 }
 
 p.menu {
-
-	display: block;
-
+  display: block;
 }
 
 p.menuts {
-
-	display: block;
-
+  display: block;
 }
 
 div#erreur {
-
-	display: none;
-	
+  display: none;
 }
-
