@@ -294,16 +294,16 @@
 		
 		<xsl:text disable-output-escaping="yes" > &lt;!--[if lt IE 9]&gt; </xsl:text>
 			
-			<script type="text/javascript" src="config_EAST/sizzle.js"></script>
-			<script type="text/javascript" src="config_EAST/html5.js"></script>
-			<script type="text/javascript" src="config_EAST/mediaelement.js"></script>
+    <script type="text/javascript" src="config_EAST/lib/sizzle.js"></script>
+    <script type="text/javascript" src="config_EAST/lib/html5.js"></script>
+    <script type="text/javascript" src="config_EAST/lib/mediaelement.js"></script>
 			
 		<xsl:text disable-output-escaping="yes"> &lt;![endif]--&gt; </xsl:text>
 		
 		<script type="text/javascript" src="config_EAST/EAST.js"><xsl:text> </xsl:text></script>
 		
-		<script type="text/javascript" src="config_EAST/timesheets.js"><xsl:text> </xsl:text></script>
-	        <script type="text/javascript" src="config_EAST/timesheets-navigation.js"><xsl:text> </xsl:text></script>
+    <script type="text/javascript" src="config_EAST/lib/timesheets.js"><xsl:text> </xsl:text></script>
+    <script type="text/javascript" src="config_EAST/lib/timesheets-navigation.js"><xsl:text> </xsl:text></script>
 	
 		 	    
         </head>
