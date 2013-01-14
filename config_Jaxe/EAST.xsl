@@ -218,6 +218,8 @@
 
     <script type="text/javascript" src="config_EAST/lib/timesheets.js"><xsl:text> </xsl:text></script>
     <script type="text/javascript" src="config_EAST/lib/timesheets-navigation.js"><xsl:text> </xsl:text></script>
+
+    <script type="text/javascript" src="config_EAST/EAST_session.js"><xsl:text> </xsl:text></script>
   </head>
 
   <xsl:variable name="body_transition">
