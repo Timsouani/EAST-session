@@ -1,8 +1,6 @@
 /* TODO:
  *  - override défilement slide
  *  - override accordéons
- * FIXME:
- *  - override reset/show
  */
 
 // pour jslint
@@ -34,13 +32,15 @@ EVENTS.onSMILReady(function() {
       containers[_i].org_selectIndex = containers[_i].selectIndex;
       containers[_i].selectIndex = new_selectIndex;
 
-      var slide = containers[_i].timeNodes[containers[_i].currentIndex];
-      // override de slide.reset()
-      slide.org_reset = slide.reset;
-      slide.reset = new_slide_reset;
-      // override de slide.show()
-      slide.org_show = slide.show;
-      slide.show = new_slide_show;
+      for (var _j=0; _j<containers[_i].timeNodes.length; _j+=1) {
+        var slide = containers[_i].timeNodes[_j];
+        // override de slide.reset()
+        slide.org_reset = slide.reset;
+        slide.reset = new_slide_reset;
+        // override de slide.show()
+        slide.org_show = slide.show;
+        slide.show = new_slide_show;
+      }
     }
   }
 });
