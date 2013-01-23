@@ -1,5 +1,4 @@
 /* TODO:
- *  - override défilement slide
  *  - override accordéons
  */
 
@@ -22,6 +21,9 @@ var new_slide_show = function(){
   console.log("Show de la slide");
   return this.org_show.apply(this, arguments);
 };
+var new_slide_click = function(e){
+  console.log("Click sur la slide");
+};
 
 EVENTS.onSMILReady(function() {
   var containers = document.getTimeContainersByTagName("*");
@@ -40,6 +42,8 @@ EVENTS.onSMILReady(function() {
         // override de slide.show()
         slide.org_show = slide.show;
         slide.show = new_slide_show;
+        // intercepts slide click
+        EVENTS.bind(slide.target, "click", new_slide_click);
       }
     }
   }
