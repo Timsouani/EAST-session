@@ -14,15 +14,15 @@ var console = console || {};
 var new_selectIndex = function(){
   // arguments[0] est le numéro d'index
   console.log("Changement de slide (ou un truc du genre).");
-  this.org_selectIndex.apply(this, arguments);
+  return this.org_selectIndex.apply(this, arguments);
 };
 var new_slide_reset = function(){
   console.log("Reset de la slide");
-  this.org_reset.apply(this, arguments);
+  return this.org_reset.apply(this, arguments);
 };
 var new_slide_show = function(){
   console.log("Show de la slide");
-  this.org_show.apply(this, arguments);
+  return this.org_show.apply(this, arguments);
 };
 
 EVENTS.onSMILReady(function() {
