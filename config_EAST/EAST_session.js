@@ -1,5 +1,5 @@
 /* TODO:
- *  - override accordéons
+ *  - intercepter les clics sur le sommaire
  */
 
 // pour jslint
@@ -7,7 +7,7 @@ var EVENTS = EVENTS || {};
 var console = console || {};
 
 (function(){
-
+var id_cpt = 100;
 var new_selectIndex = function(){
   // arguments[0] est le numéro d'index
   console.log("Changement de slide (ou un truc du genre).");
@@ -23,6 +23,9 @@ var new_slide_show = function(){
 };
 var new_slide_click = function(e){
   console.log("Click sur la slide");
+};
+var new_spanli_click = function(id, e){
+  console.log("Click sur un accordéon d'id :"+id);
 };
 
 EVENTS.onSMILReady(function() {
@@ -47,6 +50,12 @@ EVENTS.onSMILReady(function() {
       }
     }
   }
+  // intercepts spanli click
+  var spanliTab = document.getElementsByClassName("spanli");
+  for (_i=0; _i<spanliTab.length; _i+=1) {
+    spanliTab[_i].addEventListener("click", new_spanli_click.bind(null, spanliTab[_i].id));
+  }
+  
 });
 
 })();
