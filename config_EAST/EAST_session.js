@@ -1,5 +1,5 @@
 /* TODO:
- *  - intercepter les clics sur le sommaire
+ *  - Enregistrer les événements
  */
 
 // pour jslint
@@ -27,6 +27,15 @@ var new_slide_click = function(e){
 var new_spanli_click = function(id, e){
   console.log("Click sur un accordéon d'id :"+id);
 };
+var new_elsommaire_click = function(id, e){
+  console.log("Click sur un sommaire d'id :"+id);
+};
+var checkID = function(node){
+  if (!node.hasAttribute('id')) {
+    node.id = 'el'+(id_cpt++);
+  }
+  return node.id;
+}
 
 EVENTS.onSMILReady(function() {
   var containers = document.getTimeContainersByTagName("*");
@@ -54,6 +63,15 @@ EVENTS.onSMILReady(function() {
   var spanliTab = document.getElementsByClassName("spanli");
   for (_i=0; _i<spanliTab.length; _i+=1) {
     spanliTab[_i].addEventListener("click", new_spanli_click.bind(null, spanliTab[_i].id));
+  }
+  // intercepts elsommaire click
+  var elsommaireTab = document.getElementsByClassName("elsommaire");
+  for (_i=0; _i<elsommaireTab.length; _i+=1) {
+    elsommaireTab[_i].addEventListener("click", new_elsommaire_click.bind(null, checkID(elsommaireTab[_i])));
+  }
+  var elsommaire2Tab = document.getElementsByClassName("elsommaire2");
+  for (_i=0; _i<elsommaire2Tab.length; _i+=1) {
+    elsommaire2Tab[_i].addEventListener("click", new_elsommaire_click.bind(null, checkID(elsommaire2Tab[_i])));
   }
   
 });
