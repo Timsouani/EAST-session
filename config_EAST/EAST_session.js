@@ -104,7 +104,19 @@ EVENTS.onSMILReady(function() {
   for (_i=0; _i<elsommaire2Tab.length; _i+=1) {
     elsommaire2Tab[_i].addEventListener("click", new_elsommaire_click.bind(null, checkID(elsommaire2Tab[_i])));
   }
+
+  // add buttons in navbar
+  var recbtn = document.createElement('button');
+  recbtn.setAttribute('id', 'session_rec');
+  recbtn.title = 'Start session recording';
+  recbtn.appendChild(document.createTextNode('Record session'));
+
+  recbtn.addEventListener('click', function(){
+    sessionEvents = [];
+    sessionLastEventTime = (new Date()).getTime();
+  });
   
+  document.getElementById('navigation_par').appendChild(recbtn);
 });
 
 })();
