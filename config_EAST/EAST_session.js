@@ -1,10 +1,11 @@
 /* TODO:
- *  - Permettre l'exportation de la session
+ *  - Importer les sessions .xml et les rejouer
  */
 
 // pour jslint
 var EVENTS = EVENTS || {};
 var console = console || {};
+var unescape = unescape || {};
 
 (function(){
 
@@ -66,7 +67,22 @@ var checkID = function(node){
     node.id = 'el'+(id_cpt++);
   }
   return node.id;
-}
+};
+
+// Converts session events array to XML
+var sessionEventsToXML = function(){
+  var data = '<!-- SMIL session file -->\n' +
+   '<!-- Open your presentation, click "Load session" button and select this file. -->\n';
+  var e = null;
+  for (var _e=0; _e<sessionEvents.length; _e+=1) {
+    e = document.createElement('event');
+    e.setAttribute('type',sessionEvents[_e].type);
+    e.setAttribute('id', sessionEvents[_e].id);
+    e.setAttribute('time', sessionEvents[_e].time);
+    data += e.outerHTML+'\n';
+  }
+  return data;
+};
 
 EVENTS.onSMILReady(function() {
   var containers = document.getTimeContainersByTagName("*");
@@ -107,16 +123,27 @@ EVENTS.onSMILReady(function() {
 
   // add buttons in navbar
   var recbtn = document.createElement('button');
+  var exportbtn = document.createElement('button');
   recbtn.setAttribute('id', 'session_rec');
   recbtn.title = 'Start session recording';
   recbtn.appendChild(document.createTextNode('Record session'));
+  exportbtn.id = 'session_export'; exportbtn.title = 'Export session';
+  exportbtn.appendChild(document.createTextNode('Export session'));
 
   recbtn.addEventListener('click', function(){
     sessionEvents = [];
     sessionLastEventTime = (new Date()).getTime();
   });
   
+  exportbtn.addEventListener('click', function(){
+    window.open('data:text/plain;base64,' +
+                    window.btoa(unescape(
+                      encodeURIComponent(sessionEventsToXML())
+                    )));
+  });
+
   document.getElementById('navigation_par').appendChild(recbtn);
+  document.getElementById('navigation_par').appendChild(exportbtn);
 });
 
 })();
