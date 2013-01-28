@@ -7,9 +7,11 @@ var EVENTS = EVENTS || {};
 var console = console || {};
 
 (function(){
+// counter for elsommaire2 elements
 var id_cpt = 100;
+// === Events functions
 var new_selectIndex = function(){
-  // arguments[0] est le numéro d'index
+  // arguments[0] is the index number
   console.log("Changement de slide (ou un truc du genre).");
   return this.org_selectIndex.apply(this, arguments);
 };
@@ -30,6 +32,9 @@ var new_spanli_click = function(id, e){
 var new_elsommaire_click = function(id, e){
   console.log("Click sur un sommaire d'id :"+id);
 };
+// ===
+
+// Adds an id to title elements if necessary
 var checkID = function(node){
   if (!node.hasAttribute('id')) {
     node.id = 'el'+(id_cpt++);
@@ -42,16 +47,16 @@ EVENTS.onSMILReady(function() {
   for (var _i=0; _i<containers.length; _i+=1) {
     var navigation = containers[_i].parseAttribute("navigation");
     if (navigation) {
-      // override de selectIndex pour toutes les slides
+      // overrides selectIndex for each slide
       containers[_i].org_selectIndex = containers[_i].selectIndex;
       containers[_i].selectIndex = new_selectIndex;
 
       for (var _j=0; _j<containers[_i].timeNodes.length; _j+=1) {
         var slide = containers[_i].timeNodes[_j];
-        // override de slide.reset()
+        // overrides slide.reset()
         slide.org_reset = slide.reset;
         slide.reset = new_slide_reset;
-        // override de slide.show()
+        // overrides slide.show()
         slide.org_show = slide.show;
         slide.show = new_slide_show;
         // intercepts slide click
