@@ -1,5 +1,5 @@
 /* TODO:
- *  - Enregistrer les événements
+ *  - Permettre l'exportation de la session
  */
 
 // pour jslint
@@ -7,30 +7,56 @@ var EVENTS = EVENTS || {};
 var console = console || {};
 
 (function(){
+
+// session events list
+var sessionEvents = [];
+// absolute time of last event
+var sessionLastEventTime = (new Date()).getTime();
+
 // counter for elsommaire2 elements
 var id_cpt = 100;
+
+// adds an event to the session events list
+var pushEvent = function(event, id){
+  var eventTime = (new Date()).getTime();
+  var interval = eventTime - sessionLastEventTime;
+  sessionLastEventTime = eventTime;
+
+  // prevents flooding of event list with 'reset' events on slide change
+  if (interval > 100 ||
+      // allows reset quickly followed by show (aka slide reset)
+      (sessionEvents[sessionEvents.length-1].type === 'reset' && event === 'show')
+     ){
+    sessionEvents.push({
+      type: event,
+      id: id,
+      time: interval
+    });
+  }
+};
+
 // === Events functions
 var new_selectIndex = function(){
   // arguments[0] is the index number
-  console.log("Changement de slide (ou un truc du genre).");
+  pushEvent('slide', arguments[0]);
   return this.org_selectIndex.apply(this, arguments);
 };
 var new_slide_reset = function(){
-  console.log("Reset de la slide");
+  pushEvent('reset');
   return this.org_reset.apply(this, arguments);
 };
 var new_slide_show = function(){
-  console.log("Show de la slide");
+  pushEvent('show');
   return this.org_show.apply(this, arguments);
 };
 var new_slide_click = function(e){
-  console.log("Click sur la slide");
+  pushEvent('click');
 };
 var new_spanli_click = function(id, e){
-  console.log("Click sur un accordéon d'id :"+id);
+  pushEvent('spanli', id);
 };
 var new_elsommaire_click = function(id, e){
-  console.log("Click sur un sommaire d'id :"+id);
+  pushEvent('elsommaire', id);
 };
 // ===
 
