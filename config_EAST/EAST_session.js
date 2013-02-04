@@ -71,17 +71,20 @@ var checkID = function(node){
 
 // Converts session events array to XML
 var sessionEventsToXML = function(){
-  var data = '<!-- SMIL session file -->\n' +
-   '<!-- Open your presentation, click "Load session" button and select this file. -->\n';
-  var e = null;
+  var doc = document.implementation.createDocument("", "", null);
+  doc.appendChild(doc.createComment("SMIL session file"));
+  doc.appendChild(doc.createComment("Open your presentation, click \"Load session\" button and select this file."));
+  doc.appendChild(doc.createElement('xml'));
+  doc.lastChild.appendChild(doc.createTextNode('\n'));
   for (var _e=0; _e<sessionEvents.length; _e+=1) {
-    e = document.createElement('event');
-    e.setAttribute('type',sessionEvents[_e].type);
+    var e = doc.createElement('event');
+    e.setAttribute('type', sessionEvents[_e].type);
     e.setAttribute('id', sessionEvents[_e].id);
     e.setAttribute('time', sessionEvents[_e].time);
-    data += e.outerHTML+'\n';
+    doc.lastChild.appendChild(e);
+    doc.lastChild.appendChild(doc.createTextNode('\n'));
   }
-  return data;
+  return (new XMLSerializer()).serializeToString(doc);
 };
 
 EVENTS.onSMILReady(function() {
