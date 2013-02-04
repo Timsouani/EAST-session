@@ -87,6 +87,20 @@ var sessionEventsToXML = function(){
   return (new XMLSerializer()).serializeToString(doc);
 };
 
+var XMLToSessionEvents = function(xml){
+  var doc = (new DOMParser()).parseFromString(xml, "application/xml");
+  var events = doc.getElementsByTagName('event');
+  var session = [];
+  for (var _e=0; _e<events.length; _e+=1) {
+    session.push({
+      type: events[_e].getAttribute('type'),
+      id: events[_e].getAttribute('id'),
+      time: events[_e].getAttribute('time')
+    });
+  }
+  return session;
+};
+
 EVENTS.onSMILReady(function() {
   var containers = document.getTimeContainersByTagName("*");
   for (var _i=0; _i<containers.length; _i+=1) {
@@ -127,11 +141,13 @@ EVENTS.onSMILReady(function() {
   // add buttons in navbar
   var recbtn = document.createElement('button');
   var exportbtn = document.createElement('button');
+  var fileInput = document.createElement('input');
   recbtn.setAttribute('id', 'session_rec');
   recbtn.title = 'Start session recording';
   recbtn.appendChild(document.createTextNode('Record session'));
   exportbtn.id = 'session_export'; exportbtn.title = 'Export session';
   exportbtn.appendChild(document.createTextNode('Export session'));
+  fileInput.type = 'file'; fileInput.id = 'session_import'; fileInput.title = 'Import session';
 
   recbtn.addEventListener('click', function(){
     sessionEvents = [];
@@ -139,14 +155,24 @@ EVENTS.onSMILReady(function() {
   });
   
   exportbtn.addEventListener('click', function(){
-    window.open('data:text/plain;base64,' +
+    window.open('data:text/xml;base64,' +
                     window.btoa(unescape(
                       encodeURIComponent(sessionEventsToXML())
                     )));
   });
 
+  fileInput.addEventListener('change', function(e){
+    var file = e.target.files[0];
+    var reader = new FileReader();
+    reader.onload = function(f){
+      sessionEvents = XMLToSessionEvents(f.target.result);
+    };
+    reader.readAsText(file);
+  });
+
   document.getElementById('navigation_par').appendChild(recbtn);
   document.getElementById('navigation_par').appendChild(exportbtn);
+  document.getElementById('navigation_par').appendChild(fileInput);
 });
 
 })();
