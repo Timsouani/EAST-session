@@ -23,11 +23,9 @@ var pushEvent = function(event, id){
   var interval = eventTime - sessionLastEventTime;
   sessionLastEventTime = eventTime;
 
-  // prevents flooding of event list with 'reset' events on slide change
-  if (interval > 100 ||
-      // allows reset quickly followed by show (aka slide reset)
-      (sessionEvents[sessionEvents.length-1].type === 'reset' && event === 'show')
-     ){
+  // do not catch show or reset event happening after slide event
+  if (sessionEvents[sessionEvents.length-1].type !== 'slide' ||
+      (event !== 'show' && event !== 'reset')) {
     sessionEvents.push({
       type: event,
       id: id,
@@ -39,25 +37,32 @@ var pushEvent = function(event, id){
 // === Events functions
 var new_selectIndex = function(){
   // arguments[0] is the index number
-  pushEvent('slide', arguments[0]);
+  if (sessionIsRecording){
+    pushEvent('slide', arguments[0]);
+  }
   return this.org_selectIndex.apply(this, arguments);
 };
 var new_slide_reset = function(){
-  pushEvent('reset');
+  if (sessionIsRecording){
+    pushEvent('reset');
+  }
   return this.org_reset.apply(this, arguments);
 };
 var new_slide_show = function(){
-  pushEvent('show');
+  if (sessionIsRecording){
+    pushEvent('show');
+  }
   return this.org_show.apply(this, arguments);
 };
 var new_slide_click = function(e){
-  pushEvent('click');
+  if (sessionIsRecording){
+    pushEvent('click');
+  }
 };
-var new_spanli_click = function(id, e){
-  pushEvent('spanli', id);
-};
-var new_elsommaire_click = function(id, e){
-  pushEvent('elsommaire', id);
+var new_li_click = function(id, e){
+  if (sessionIsRecording){
+    pushEvent('li', id);
+  }
 };
 // ===
 
@@ -70,7 +75,7 @@ var checkID = function(node){
 };
 
 // Converts session events array to XML
-var sessionEventsToXML = function(){
+var sessionEventsToXml = function(){
   var doc = document.implementation.createDocument("", "", null);
   doc.appendChild(doc.createComment("SMIL session file"));
   doc.appendChild(doc.createComment("Open your presentation, click \"Load session\" button and select this file."));
@@ -87,7 +92,7 @@ var sessionEventsToXML = function(){
   return (new XMLSerializer()).serializeToString(doc);
 };
 
-var XMLToSessionEvents = function(xml){
+var xmlToSessionEvents = function(xml){
   var doc = (new DOMParser()).parseFromString(xml, "application/xml");
   var events = doc.getElementsByTagName('event');
   var session = [];
@@ -123,19 +128,12 @@ EVENTS.onSMILReady(function() {
       }
     }
   }
-  // intercepts spanli click
-  var spanliTab = document.getElementsByClassName("spanli");
-  for (_i=0; _i<spanliTab.length; _i+=1) {
-    spanliTab[_i].addEventListener("click", new_spanli_click.bind(null, spanliTab[_i].id));
-  }
-  // intercepts elsommaire click
-  var elsommaireTab = document.getElementsByClassName("elsommaire");
-  for (_i=0; _i<elsommaireTab.length; _i+=1) {
-    elsommaireTab[_i].addEventListener("click", new_elsommaire_click.bind(null, checkID(elsommaireTab[_i])));
-  }
-  var elsommaire2Tab = document.getElementsByClassName("elsommaire2");
-  for (_i=0; _i<elsommaire2Tab.length; _i+=1) {
-    elsommaire2Tab[_i].addEventListener("click", new_elsommaire_click.bind(null, checkID(elsommaire2Tab[_i])));
+  // intercepts click on list
+  var liTab = document.getElementsByTagName("li");
+  for (_i=0; _i<liTab.length; _i+=1) {
+    if (liTab[_i].hasAttribute("smil")){
+      liTab[_i].addEventListener("click", new_li_click.bind(null, checkID(liTab[_i])));
+    }
   }
 
   // add buttons in navbar
@@ -157,7 +155,7 @@ EVENTS.onSMILReady(function() {
   exportbtn.addEventListener('click', function(){
     window.open('data:text/xml;base64,' +
                     window.btoa(unescape(
-                      encodeURIComponent(sessionEventsToXML())
+                      encodeURIComponent(sessionEventsToXml())
                     )));
   });
 
@@ -165,7 +163,7 @@ EVENTS.onSMILReady(function() {
     var file = e.target.files[0];
     var reader = new FileReader();
     reader.onload = function(f){
-      sessionEvents = XMLToSessionEvents(f.target.result);
+      sessionEvents = xmlToSessionEvents(f.target.result);
     };
     reader.readAsText(file);
   });
