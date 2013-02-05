@@ -9,11 +9,17 @@ var unescape = unescape || {};
 
 (function(){
 
+// public API
+document.SESSION = {};
+
 // session events list
 var sessionEvents = [];
 // absolute time of last event
 var sessionLastEventTime = (new Date()).getTime();
-
+// are we recording or playing a session ?
+var sessionIsRecording = true;
+// 
+var slideControlContainer = null;
 // counter for elsommaire2 elements
 var id_cpt = 100;
 
@@ -106,8 +112,19 @@ var xmlToSessionEvents = function(xml){
   return session;
 };
 
+document.SESSION.record = function(){
+  sessionEvents = [{
+    type: 'slide',
+    id: slideControlContainer.currentIndex,
+    time: 0
+  }];
+  sessionLastEventTime = (new Date()).getTime();
+  sessionIsRecording = true;
+};
+
 EVENTS.onSMILReady(function() {
   var containers = document.getTimeContainersByTagName("*");
+  slideControlContainer = containers[containers.length-1];
   for (var _i=0; _i<containers.length; _i+=1) {
     var navigation = containers[_i].parseAttribute("navigation");
     if (navigation) {
@@ -147,10 +164,7 @@ EVENTS.onSMILReady(function() {
   exportbtn.appendChild(document.createTextNode('Export session'));
   fileInput.type = 'file'; fileInput.id = 'session_import'; fileInput.title = 'Import session';
 
-  recbtn.addEventListener('click', function(){
-    sessionEvents = [];
-    sessionLastEventTime = (new Date()).getTime();
-  });
+  recbtn.addEventListener('click', document.SESSION.record);
   
   exportbtn.addEventListener('click', function(){
     window.open('data:text/xml;base64,' +
@@ -171,6 +185,8 @@ EVENTS.onSMILReady(function() {
   document.getElementById('navigation_par').appendChild(recbtn);
   document.getElementById('navigation_par').appendChild(exportbtn);
   document.getElementById('navigation_par').appendChild(fileInput);
+
+  document.SESSION.record();
 });
 
 })();
