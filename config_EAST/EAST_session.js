@@ -1,7 +1,3 @@
-/* TODO:
- *  - Importer les sessions .xml et les rejouer
- */
-
 // pour jslint
 var EVENTS = EVENTS || {};
 var console = console || {};
@@ -112,6 +108,38 @@ var xmlToSessionEvents = function(xml){
   return session;
 };
 
+var playSession = function(){
+  var position = 0;
+  var lastTimeout;
+
+  var walkSession = function(){
+    switch (sessionEvents[position].type){
+      case 'slide':
+        slideControlContainer.selectIndex(parseInt(sessionEvents[position].id, 10));
+        break;
+      case 'reset':
+        document.getTimeContainersByTarget(document.getElementById(window.location.hash.slice(1)))[0].reset();
+        break;
+      case 'show':
+        document.getTimeContainersByTarget(document.getElementById(window.location.hash.slice(1)))[0].show();
+        break;
+      case 'click':
+        document.getElementById(window.location.hash.slice(1)).click();
+        break;
+      case 'li':
+        document.getElementById(sessionEvents[position].id).click();
+        break;
+    }
+    position += 1;
+    if (position < sessionEvents.length){
+      lastTimeout = window.setTimeout(walkSession, sessionEvents[position].time);
+    }
+  };
+
+  sessionIsRecording = false;
+  walkSession();
+};
+
 document.SESSION.record = function(){
   sessionEvents = [{
     type: 'slide',
@@ -178,6 +206,7 @@ EVENTS.onSMILReady(function() {
     var reader = new FileReader();
     reader.onload = function(f){
       sessionEvents = xmlToSessionEvents(f.target.result);
+      playSession();
     };
     reader.readAsText(file);
   });
