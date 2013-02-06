@@ -1,31 +1,28 @@
-// pour jslint
-var EVENTS = EVENTS || {};
-var console = console || {};
-var unescape = unescape || {};
+/*global EVENTS */
+/*jshint devel: true */
+/*jshint nonstandard: true */
 
 (function(){
 
 // public API
-document.SESSION = {};
+document.SESSION = {
+  record: null // starts session recording
+};
 
-// session events list
-var sessionEvents = [];
-// absolute time of last event
-var sessionLastEventTime = (new Date()).getTime();
-// are we recording or playing a session ?
-var sessionIsRecording = true;
-// 
-var slideControlContainer = null;
-// counter for elsommaire2 elements
-var id_cpt = 100;
+var sessionEvents = [],           // session events list
+    sessionLastEventTime = null,  // absolute time of last event
+    sessionIsRecording = false,   // are we recording or playing a session ?
+    slideControlContainer = null, // "master" timeContainer for slide changing and current slide index
+    id_cpt = 100;                 // counter for our id generator
 
 // adds an event to the session events list
 var pushEvent = function(event, id){
-  var eventTime = (new Date()).getTime();
-  var interval = eventTime - sessionLastEventTime;
+  var eventTime = (new Date()).getTime(),
+      interval = eventTime - sessionLastEventTime;
+
   sessionLastEventTime = eventTime;
 
-  // do not catch show or reset event happening after slide event
+  // do not catch show or reset events happening after slide events
   if (sessionEvents[sessionEvents.length-1].type !== 'slide' ||
       (event !== 'show' && event !== 'reset')) {
     sessionEvents.push({
@@ -36,42 +33,10 @@ var pushEvent = function(event, id){
   }
 };
 
-// === Events functions
-var new_selectIndex = function(){
-  // arguments[0] is the index number
-  if (sessionIsRecording){
-    pushEvent('slide', arguments[0]);
-  }
-  return this.org_selectIndex.apply(this, arguments);
-};
-var new_slide_reset = function(){
-  if (sessionIsRecording){
-    pushEvent('reset');
-  }
-  return this.org_reset.apply(this, arguments);
-};
-var new_slide_show = function(){
-  if (sessionIsRecording){
-    pushEvent('show');
-  }
-  return this.org_show.apply(this, arguments);
-};
-var new_slide_click = function(e){
-  if (sessionIsRecording){
-    pushEvent('click');
-  }
-};
-var new_li_click = function(id, e){
-  if (sessionIsRecording){
-    pushEvent('li', id);
-  }
-};
-// ===
-
-// Adds an id to title elements if necessary
+// Adds an id to title elements if necessary and returns it
 var checkID = function(node){
   if (!node.hasAttribute('id')) {
-    node.id = 'el'+(id_cpt++);
+    node.id = 'el'+(id_cpt+=1);
   }
   return node.id;
 };
@@ -94,10 +59,12 @@ var sessionEventsToXml = function(){
   return (new XMLSerializer()).serializeToString(doc);
 };
 
+// Reads XML string and convert it to a session events array
 var xmlToSessionEvents = function(xml){
-  var doc = (new DOMParser()).parseFromString(xml, "application/xml");
-  var events = doc.getElementsByTagName('event');
-  var session = [];
+  var doc = (new DOMParser()).parseFromString(xml, "application/xml"),
+      events = doc.getElementsByTagName('event'),
+      session = [];
+
   for (var _e=0; _e<events.length; _e+=1) {
     session.push({
       type: events[_e].getAttribute('type'),
@@ -108,20 +75,27 @@ var xmlToSessionEvents = function(xml){
   return session;
 };
 
+// Starts replay of saved session
 var playSession = function(){
-  var position = 0;
-  var lastTimeout;
+  var position = 0,       // current event index
+      lastTimeout = null; // return value of setTimeout for last planified event
 
   var walkSession = function(){
     switch (sessionEvents[position].type){
       case 'slide':
-        slideControlContainer.selectIndex(parseInt(sessionEvents[position].id, 10));
+        slideControlContainer.selectIndex(
+          parseInt(sessionEvents[position].id, 10)
+        );
         break;
       case 'reset':
-        document.getTimeContainersByTarget(document.getElementById(window.location.hash.slice(1)))[0].reset();
+        document.getTimeContainersByTarget(
+          document.getElementById(window.location.hash.slice(1))
+        )[0].reset();
         break;
       case 'show':
-        document.getTimeContainersByTarget(document.getElementById(window.location.hash.slice(1)))[0].show();
+        document.getTimeContainersByTarget(
+          document.getElementById(window.location.hash.slice(1))
+        )[0].show();
         break;
       case 'click':
         document.getElementById(window.location.hash.slice(1)).click();
@@ -129,6 +103,9 @@ var playSession = function(){
       case 'li':
         document.getElementById(sessionEvents[position].id).click();
         break;
+      default:
+        console.error("EAST-session: unknown event type " +
+                      sessionEvents[position].type);
     }
     position += 1;
     if (position < sessionEvents.length){
@@ -140,6 +117,7 @@ var playSession = function(){
   walkSession();
 };
 
+// Public API
 document.SESSION.record = function(){
   sessionEvents = [{
     type: 'slide',
@@ -150,57 +128,87 @@ document.SESSION.record = function(){
   sessionIsRecording = true;
 };
 
+// Catchers for session events
+var eventCatchers = {
+  /*jshint curly: false */
+  selectIndex: function(slide_id){
+    if (sessionIsRecording) pushEvent('slide', slide_id);
+    return this.org_selectIndex.apply(this, arguments);
+  },
+  reset: function(){
+    if (sessionIsRecording) pushEvent('reset');
+    return this.org_reset.apply(this, arguments);
+  },
+  show: function(){
+    if (sessionIsRecording) pushEvent('show');
+    return this.org_show.apply(this, arguments);
+  },
+  slide_click: function(e){
+    if (sessionIsRecording) pushEvent('click');
+  },
+  li_click: function(id, e){
+    if (sessionIsRecording) pushEvent('li', id);
+  }
+};
+
+// Init, binds to events and creates UI
 EVENTS.onSMILReady(function() {
   var containers = document.getTimeContainersByTagName("*");
   slideControlContainer = containers[containers.length-1];
+
   for (var _i=0; _i<containers.length; _i+=1) {
     var navigation = containers[_i].parseAttribute("navigation");
     if (navigation) {
       // overrides selectIndex for each slide
       containers[_i].org_selectIndex = containers[_i].selectIndex;
-      containers[_i].selectIndex = new_selectIndex;
+      containers[_i].selectIndex = eventCatchers.selectIndex;
 
       for (var _j=0; _j<containers[_i].timeNodes.length; _j+=1) {
         var slide = containers[_i].timeNodes[_j];
         // overrides slide.reset()
         slide.org_reset = slide.reset;
-        slide.reset = new_slide_reset;
+        slide.reset = eventCatchers.reset;
         // overrides slide.show()
         slide.org_show = slide.show;
-        slide.show = new_slide_show;
+        slide.show = eventCatchers.show;
         // intercepts slide click
-        EVENTS.bind(slide.target, "click", new_slide_click);
+        EVENTS.bind(slide.target, "click", eventCatchers.slide_click);
       }
     }
   }
-  // intercepts click on list
+
+  // intercepts clicks on lists
   var liTab = document.getElementsByTagName("li");
   for (_i=0; _i<liTab.length; _i+=1) {
     if (liTab[_i].hasAttribute("smil")){
-      liTab[_i].addEventListener("click", new_li_click.bind(null, checkID(liTab[_i])));
+      liTab[_i].addEventListener(
+        "click", eventCatchers.li_click.bind(null, checkID(liTab[_i]))
+      );
     }
   }
 
   // add buttons in navbar
-  var recbtn = document.createElement('button');
-  var exportbtn = document.createElement('button');
-  var fileInput = document.createElement('input');
+  var recbtn = document.createElement('button'),
+      exportbtn = document.createElement('button'),
+      fileInput = document.createElement('input');
+
   recbtn.setAttribute('id', 'session_rec');
   recbtn.title = 'Start session recording';
   recbtn.appendChild(document.createTextNode('Record session'));
+
   exportbtn.id = 'session_export'; exportbtn.title = 'Export session';
   exportbtn.appendChild(document.createTextNode('Export session'));
-  fileInput.type = 'file'; fileInput.id = 'session_import'; fileInput.title = 'Import session';
+
+  fileInput.type = 'file'; fileInput.id = 'session_import';
+  fileInput.title = 'Import session';
 
   recbtn.addEventListener('click', document.SESSION.record);
-  
   exportbtn.addEventListener('click', function(){
     window.open('data:text/xml;base64,' +
                     window.btoa(unescape(
                       encodeURIComponent(sessionEventsToXml())
                     )));
   });
-
   fileInput.addEventListener('change', function(e){
     var file = e.target.files[0];
     var reader = new FileReader();
@@ -218,4 +226,4 @@ EVENTS.onSMILReady(function() {
   document.SESSION.record();
 });
 
-})();
+}());
