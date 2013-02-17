@@ -6,7 +6,10 @@
 
 // public API
 document.SESSION = {
-  record: null // starts session recording
+  record: function() {},  // starts session recording
+  play: function() {},    // starts playing of loaded session
+  pause: function() {},   // suspends/resume playing
+  jump: function(secs) {} // jumps at specified time
 };
 
 var sessionEvents = [],           // session events list
@@ -129,6 +132,12 @@ document.SESSION.record = function(){
   }];
   sessionLastEventTime = (new Date()).getTime();
   sessionIsRecording = true;
+};
+document.SESSION.play = function(){
+};
+document.SESSION.pause = function(){
+};
+document.SESSION.jump = function(time){
 };
 
 // Catchers for session events
