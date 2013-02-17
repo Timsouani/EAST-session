@@ -45,14 +45,17 @@ var checkID = function(node){
 var sessionEventsToXml = function(){
   var doc = document.implementation.createDocument("", "", null);
   doc.appendChild(doc.createComment("SMIL session file"));
-  doc.appendChild(doc.createComment("Open your presentation, click \"Load session\" button and select this file."));
+  doc.appendChild(doc.createComment("Save this to a .xml file."));
+  doc.appendChild(doc.createComment("To play back, open your presentation, click \"Load session\" button and select this file."));
   doc.appendChild(doc.createElement('xml'));
   doc.lastChild.appendChild(doc.createTextNode('\n'));
   for (var _e=0; _e<sessionEvents.length; _e+=1) {
     var e = doc.createElement('event');
     e.setAttribute('type', sessionEvents[_e].type);
-    e.setAttribute('id', sessionEvents[_e].id);
     e.setAttribute('time', sessionEvents[_e].time);
+    if (sessionEvents[_e].id) {
+      e.setAttribute('id', sessionEvents[_e].id);
+    }
     doc.lastChild.appendChild(e);
     doc.lastChild.appendChild(doc.createTextNode('\n'));
   }
