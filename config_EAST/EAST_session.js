@@ -78,7 +78,7 @@ var xmlToSessionEvents = function(xml){
     session.push({
       type: events[_e].getAttribute('type'),
       id: events[_e].getAttribute('id'),
-      time: events[_e].getAttribute('time')
+      time: parseInt(events[_e].getAttribute('time'), 10)
     });
   }
   return session;
