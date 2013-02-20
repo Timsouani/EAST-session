@@ -154,7 +154,6 @@ var playback = {
   },
 
   jump: function(time){
-    console.log("jump");
     var timeCounter = 0,
         jumpFrom = 0,
         jumpTo = 0,
@@ -162,7 +161,6 @@ var playback = {
 
     while (jumpTo<sessionEvents.length &&
            timeCounter+sessionEvents[jumpTo].time < time){
-      console.log("timecounter: "+timeCounter);
       if (sessionEvents[jumpTo].type === 'slide'){
         nearestSlideIndex = jumpTo;
       }
@@ -170,18 +168,15 @@ var playback = {
       jumpTo += 1;
     }
 
-    console.log("jump vers "+jumpTo+" en passant par "+nearestSlideIndex);
     if (jumpTo === playback._position){
       return;
     } else {
       jumpFrom = nearestSlideIndex;
     }
-    console.log("jump confirmé");
 
     window.clearTimeout(playback._lastTimeout);
     for (var _i=jumpFrom; _i<jumpTo; _i+=1){
       playback._position = _i;
-      console.log("jump saut");
       playback.walk(true);
     }
     sessionLastEventTime = time - timeCounter +
