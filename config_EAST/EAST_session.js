@@ -26,8 +26,11 @@ var pushEvent = function(event, id){
   sessionLastEventTime = eventTime;
 
   // do not catch show or reset events happening after slide events
-  if (sessionEvents[sessionEvents.length-1].type !== 'slide' ||
-      (event !== 'show' && event !== 'reset')) {
+  // also do not catch too close events, except show following reset
+  if ((sessionEvents[sessionEvents.length-1].type !== 'slide' ||
+      (event !== 'show' && event !== 'reset')) && ((interval>50) ||
+      (event === 'show' && sessionEvents[sessionEvents.length-1].type ===
+      'reset'))) {
     sessionEvents.push({
       type: event,
       id: id,
