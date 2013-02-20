@@ -9,12 +9,15 @@ document.SESSION = {
   record: function() {},  // starts session recording
   play: function() {},    // starts playing of loaded session
   pause: function() {},   // suspends/resume playing
-  jump: function(secs) {} // jumps at specified time
+  jump: function(secs) {},// jumps at specified time
+  load: function(str) {}, // loads session from string XML
+  save: function() {}     // returns session as string XML
 };
 
 var sessionEvents = [],           // session events list
     sessionLastEventTime = null,  // absolute time of last event
     sessionIsRecording = false,   // are we recording or playing a session ?
+    sessionIsPaused = false,      // was the session playback suspended ?
     slideControlContainer = null, // "master" timeContainer for slide changing and current slide index
     id_cpt = 100;                 // counter for our id generator
 
@@ -84,16 +87,34 @@ var xmlToSessionEvents = function(xml){
   return session;
 };
 
-// Starts replay of saved session
-var playSession = function(){
-  var position = 0,       // current event index
-      lastTimeout = null; // return value of setTimeout for last planified event
+// variables and functions for session playback
+var playback = {
+  _position: 0,
+  _lastTimeout: null,
 
-  var walkSession = function(){
-    switch (sessionEvents[position].type){
+  play: function(){
+    if (!sessionIsRecording){
+      window.clearTimeout(playback._lastTimeout);
+    }
+    playback._position = 0;
+    playback._lastTimeout = null;
+    sessionIsRecording = false;
+    sessionIsPaused = false;
+    playback.walk();
+  },
+
+  walk: function(onlyOne){
+    if (playback._position < sessionEvents.length && !onlyOne &&
+        sessionEvents[playback._position+1]){
+      sessionLastEventTime = (new Date()).getTime();
+      playback._lastTimeout = window.setTimeout(playback.walk,
+                                      sessionEvents[playback._position+1].time);
+    }
+
+    switch (sessionEvents[playback._position].type){
       case 'slide':
         slideControlContainer.selectIndex(
-          parseInt(sessionEvents[position].id, 10)
+          parseInt(sessionEvents[playback._position].id, 10)
         );
         break;
       case 'reset':
@@ -110,20 +131,65 @@ var playSession = function(){
         document.getElementById(window.location.hash.slice(1)).click();
         break;
       case 'li':
-        document.getElementById(sessionEvents[position].id).click();
+        document.getElementById(sessionEvents[playback._position].id).click();
         break;
       default:
         console.error("EAST-session: unknown event type " +
-                      sessionEvents[position].type);
+                      sessionEvents[playback._position].type);
     }
-    position += 1;
-    if (position < sessionEvents.length){
-      lastTimeout = window.setTimeout(walkSession, sessionEvents[position].time);
-    }
-  };
 
-  sessionIsRecording = false;
-  walkSession();
+    playback._position += 1;
+  },
+
+  pause: function(){
+    window.clearTimeout(playback._lastTimeout);
+    sessionLastEventTime = (new Date()).getTime() - sessionLastEventTime;
+    sessionIsPaused = true;
+  },
+
+  resume: function(){
+    playback._lastTimeout = window.setTimeout(playback.walk,
+                sessionEvents[playback._position].time - sessionLastEventTime);
+    sessionIsPaused = false;
+  },
+
+  jump: function(time){
+    console.log("jump");
+    var timeCounter = 0,
+        jumpFrom = 0,
+        jumpTo = 0,
+        nearestSlideIndex = 0;
+
+    while (jumpTo<sessionEvents.length &&
+           timeCounter+sessionEvents[jumpTo].time < time){
+      console.log("timecounter: "+timeCounter);
+      if (sessionEvents[jumpTo].type === 'slide'){
+        nearestSlideIndex = jumpTo;
+      }
+      timeCounter += sessionEvents[jumpTo].time;
+      jumpTo += 1;
+    }
+
+    console.log("jump vers "+jumpTo+" en passant par "+nearestSlideIndex);
+    if (jumpTo === playback._position){
+      return;
+    } else {
+      jumpFrom = nearestSlideIndex;
+    }
+    console.log("jump confirmé");
+
+    window.clearTimeout(playback._lastTimeout);
+    for (var _i=jumpFrom; _i<jumpTo; _i+=1){
+      playback._position = _i;
+      console.log("jump saut");
+      playback.walk(true);
+    }
+    sessionLastEventTime = time - timeCounter +
+      sessionEvents[playback._position].time;
+    if(!sessionIsPaused){
+      playback.resume();
+    }
+ }
 };
 
 // Public API
@@ -136,11 +202,37 @@ document.SESSION.record = function(){
   sessionLastEventTime = (new Date()).getTime();
   sessionIsRecording = true;
 };
+
 document.SESSION.play = function(){
+  if (!sessionIsPaused){
+    document.SESSION.pause();
+  }
+  playback.play();
 };
+
 document.SESSION.pause = function(){
+  if(sessionIsPaused){
+    playback.resume();
+  } else {
+    playback.pause();
+  }
 };
+
 document.SESSION.jump = function(time){
+  playback.jump(time);
+};
+
+document.SESSION.load = function(str){
+  var events = xmlToSessionEvents(str);
+  if (events.length && events.length>0){
+    sessionEvents = events;
+    return true;
+  }
+  return false;
+};
+
+document.SESSION.save = function(){
+  return unescape(encodeURIComponent(sessionEventsToXml()));
 };
 
 // Catchers for session events
@@ -229,7 +321,7 @@ EVENTS.onSMILReady(function() {
     var reader = new FileReader();
     reader.onload = function(f){
       sessionEvents = xmlToSessionEvents(f.target.result);
-      playSession();
+      playback.play();
     };
     reader.readAsText(file);
   });
