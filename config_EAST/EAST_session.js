@@ -62,7 +62,7 @@ var sessionEventsToXml = function(){
     var e = doc.createElement('event');
     e.setAttribute('type', sessionEvents[_e].type);
     e.setAttribute('time', sessionEvents[_e].time);
-    if (sessionEvents[_e].id) {
+    if (sessionEvents[_e].id !== undefined) {
       e.setAttribute('id', sessionEvents[_e].id);
     }
     doc.lastChild.appendChild(e);
