@@ -112,7 +112,7 @@ function bindNavControls(timeContainer, navigation) {
   });
 
   // mouse scroll: http://adomas.org/javascript-mouse-wheel/
-  if (hasControl("scroll")) {
+/*  if (hasControl("scroll")) {
     function onMouseWheel(event) {
       if (event) {
         if (event.ctrlKey) return;
@@ -139,7 +139,7 @@ function bindNavControls(timeContainer, navigation) {
     if (window.addEventListener) // DOMMouseScroll is specific to Mozilla
       slideshow.addEventListener("DOMMouseScroll", onMouseWheel, false);
     slideshow.onmousewheel = onMouseWheel;
-  }
+  }*/
 
   // update the hash whenever possible
   if (hasControl("hash")) {
