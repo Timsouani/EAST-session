@@ -15,6 +15,7 @@ document.SESSION = {
 };
 
 var sessionEvents = [],           // session events list
+    JsonEvents = [],
     sessionLastEventTime = null,  // absolute time of last event
     sessionIsRecording = false,   // are we recording or playing a session ?
     sessionIsPaused = false,      // was the session playback suspended ?
@@ -22,24 +23,37 @@ var sessionEvents = [],           // session events list
     id_cpt = 100;                 // counter for our id generator
 
 // adds an event to the session events list
-var pushEvent = function(event, id){
-  var eventTime = (new Date()).getTime(),
-      interval = eventTime - sessionLastEventTime;
+var pushEvent = function(event, id, cord = null){
+  var eventTime = (new Date()).getTime(), interval = eventTime - sessionLastEventTime;
 
   sessionLastEventTime = eventTime;
 
   // do not catch show or reset events happening after slide events
   // also do not catch too close events, except show following reset
   if ((sessionEvents[sessionEvents.length-1].type !== 'slide' ||
-      (event !== 'show' && event !== 'reset')) && ((interval>50) ||
+      (event !== 'show' && event !== 'reset')) && ((interval>20) ||
       (event === 'show' && sessionEvents[sessionEvents.length-1].type ===
       'reset'))) {
+
+    if (event === 'move') {
     sessionEvents.push({
       type: event,
       id: id,
+        cord : cord,
       time: interval
     });
+    }
+    else{
+      
+      sessionEvents.push({
+        type: event,
+        id: id,
+        time: interval
+      });
+    
   }
+    }
+    
 };
 
 // Adds an id to title elements if necessary and returns it
@@ -65,11 +79,16 @@ var sessionEventsToXml = function(){
     if (sessionEvents[_e].id !== undefined) {
       e.setAttribute('id', sessionEvents[_e].id);
     }
+    if (sessionEvents[_e].type === 'move') {
+      e.setAttribute('x', sessionEvents[_e].cord.x);
+      e.setAttribute('y', sessionEvents[_e].cord.y);
+    }
     doc.lastChild.appendChild(e);
     doc.lastChild.appendChild(doc.createTextNode('\n'));
   }
   return (new XMLSerializer()).serializeToString(doc);
 };
+
 
 // Reads XML string and convert it to a session events array
 var xmlToSessionEvents = function(xml){
@@ -81,7 +100,8 @@ var xmlToSessionEvents = function(xml){
     session.push({
       type: events[_e].getAttribute('type'),
       id: events[_e].getAttribute('id'),
-      time: parseInt(events[_e].getAttribute('time'), 10)
+      time: parseInt(events[_e].getAttribute('time'), 10),
+      cord : {x : events[_e].getAttribute('x'), y : events[_e].getAttribute('y')}
     });
   }
   return session;
@@ -133,6 +153,13 @@ var playback = {
       case 'li':
         document.getElementById(sessionEvents[playback._position].id).click();
         break;
+      case 'move':{
+        console.log(sessionEvents[playback._position].cord.x);
+        document.getElementById('im').style.top  = sessionEvents[playback._position].cord.y+"px";
+        document.getElementById('im').style.left = sessionEvents[playback._position].cord.x+"px";
+        document.getElementById('im').style.display = "block";
+        break;
+      }
       default:
         console.error("EAST-session: unknown event type " +
                       sessionEvents[playback._position].type);
@@ -159,8 +186,7 @@ var playback = {
         jumpTo = 0,
         nearestSlideIndex = 0;
 
-    while (jumpTo<sessionEvents.length &&
-           timeCounter+sessionEvents[jumpTo].time < time){
+    while (jumpTo<sessionEvents.length && timeCounter+sessionEvents[jumpTo].time < time){
       if (sessionEvents[jumpTo].type === 'slide'){
         nearestSlideIndex = jumpTo;
       }
@@ -250,6 +276,9 @@ var eventCatchers = {
   },
   li_click: function(id, e){
     if (sessionIsRecording) pushEvent('li', id);
+  },
+  move: function(e){
+    if (sessionIsRecording) pushEvent('move', null, {"x": e.pageX,"y": e.pageY});
   }
 };
 
@@ -261,6 +290,7 @@ EVENTS.onSMILReady(function() {
   for (var _i=0; _i<containers.length; _i+=1) {
     var navigation = containers[_i].parseAttribute("navigation");
     if (navigation) {
+      // overrides selectIndex for each slide
       // overrides selectIndex for each slide
       containers[_i].org_selectIndex = containers[_i].selectIndex;
       containers[_i].selectIndex = eventCatchers.selectIndex;
@@ -275,6 +305,7 @@ EVENTS.onSMILReady(function() {
         slide.show = eventCatchers.show;
         // intercepts slide click
         EVENTS.bind(slide.target, "click", eventCatchers.slide_click);
+        slide.target.addEventListener("mousemove", eventCatchers.move)
       }
     }
   }
@@ -284,7 +315,7 @@ EVENTS.onSMILReady(function() {
   for (_i=0; _i<liTab.length; _i+=1) {
     if (liTab[_i].hasAttribute("smil")){
       liTab[_i].addEventListener(
-        "click", eventCatchers.li_click.bind(null, checkID(liTab[_i]))
+        " ", eventCatchers.li_click.bind(null, checkID(liTab[_i]))
       );
     }
   }

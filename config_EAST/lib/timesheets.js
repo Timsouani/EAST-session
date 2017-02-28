@@ -500,7 +500,7 @@ if (!Date.now) Date.now = function() {
 (function(){
 
 // note: all lines containing "consoleLog" will be deleted by the minifier
-var DEBUG = true;                             // consoleLog
+var DEBUG = false;                             // consoleLog
 function consoleLog(message) {                // consoleLog
   if (DEBUG && (typeof(console) == "object")) // consoleLog
     console.log(message);                     // consoleLog
