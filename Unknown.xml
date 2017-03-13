@@ -1,0 +1,22 @@
+<!--SMIL session file--><!--Save this to a .xml file.--><!--To play back, open your presentation, click "Load session" button and select this file.--><xml>
+<event type="slide" time="0" id="0"/>
+<event type="move" time="1085" id="null" x="976" y="58"/>
+<event type="move" time="42" id="null" x="929" y="192"/>
+<event type="move" time="32" id="null" x="893" y="343"/>
+<event type="move" time="218" id="null" x="892" y="356"/>
+<event type="move" time="25" id="null" x="780" y="461"/>
+<event type="slide" time="424" id="1"/>
+<event type="move" time="129" id="null" x="703" y="637"/>
+<event type="move" time="428" id="null" x="703" y="637"/>
+<event type="move" time="23" id="null" x="581" y="495"/>
+<event type="move" time="199" id="null" x="578" y="467"/>
+<event type="move" time="23" id="null" x="564" y="467"/>
+<event type="move" time="41" id="null" x="528" y="460"/>
+<event type="li" time="232" id="el102"/>
+<event type="move" time="190" id="null" x="394" y="414"/>
+<event type="move" time="8858" id="null" x="1230" y="180"/>
+<event type="move" time="26" id="null" x="1027" y="329"/>
+<event type="move" time="61" id="null" x="1027" y="329"/>
+<event type="move" time="33" id="null" x="1168" y="443"/>
+<event type="move" time="32" id="null" x="1168" y="443"/>
+</xml>

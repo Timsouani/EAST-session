@@ -124,11 +124,9 @@ var playback = {
   },
 
   walk: function(onlyOne){
-    if (playback._position < sessionEvents.length && !onlyOne &&
-        sessionEvents[playback._position+1]){
+    if (playback._position < sessionEvents.length && !onlyOne && sessionEvents[playback._position+1]){
       sessionLastEventTime = (new Date()).getTime();
-      playback._lastTimeout = window.setTimeout(playback.walk,
-                                      sessionEvents[playback._position+1].time);
+      playback._lastTimeout = window.setTimeout(playback.walk,sessionEvents[playback._position+1].time);
     }
 
     switch (sessionEvents[playback._position].type){
@@ -150,11 +148,12 @@ var playback = {
       case 'click':
         document.getElementById(window.location.hash.slice(1)).click();
         break;
-      case 'li':
+      case 'li':{
+        console.log(sessionEvents[playback._position].id);
         document.getElementById(sessionEvents[playback._position].id).click();
         break;
+      }
       case 'move':{
-        console.log(sessionEvents[playback._position].cord.x);
         document.getElementById('im').style.top  = sessionEvents[playback._position].cord.y+"px";
         document.getElementById('im').style.left = sessionEvents[playback._position].cord.x+"px";
         document.getElementById('im').style.display = "block";
@@ -314,9 +313,8 @@ EVENTS.onSMILReady(function() {
   var liTab = document.getElementsByTagName("li");
   for (_i=0; _i<liTab.length; _i+=1) {
     if (liTab[_i].hasAttribute("smil")){
-      liTab[_i].addEventListener(
-        " ", eventCatchers.li_click.bind(null, checkID(liTab[_i]))
-      );
+      liTab[_i].addEventListener("click", eventCatchers.li_click.bind(null, checkID(liTab[_i])));
+      console.log(checkID(liTab[_i]));
     }
   }
 
