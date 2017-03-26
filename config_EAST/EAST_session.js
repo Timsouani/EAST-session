@@ -2,6 +2,9 @@
 /*jshint devel: true */
 /*jshint nonstandard: true */
 
+
+
+
 (function(){
 
 // public API
@@ -23,7 +26,7 @@ var sessionEvents = [],           // session events list
     id_cpt = 100;                 // counter for our id generator
 
 // adds an event to the session events list
-var pushEvent = function(event, id, cord = null){
+var pushEvent = function(event, id, cord = null, text = null){
   var eventTime = (new Date()).getTime(), interval = eventTime - sessionLastEventTime;
 
   sessionLastEventTime = eventTime;
@@ -39,9 +42,16 @@ var pushEvent = function(event, id, cord = null){
     sessionEvents.push({
       type: event,
       id: id,
-        cord : cord,
+      cord : cord,
       time: interval
     });
+    }else if(event === 'highlight'){
+        sessionEvents.push({
+        type: event,
+        id: id,
+        text : text,
+        time: interval
+      });
     }
     else{
       
@@ -54,6 +64,19 @@ var pushEvent = function(event, id, cord = null){
   }
     }
     
+};
+
+var GetSelectedText = function () {
+    if (window.getSelection) {  // all browsers, except IE before version 9
+        var range = window.getSelection ();
+        return range.toString();
+    } 
+    else {
+        if (document.selection.createRange) { // Internet Explorer
+            var range = document.selection.createRange ();
+            return range.text;
+        }
+    }
 };
 
 // Adds an id to title elements if necessary and returns it
@@ -82,6 +105,9 @@ var sessionEventsToXml = function(){
     if (sessionEvents[_e].type === 'move') {
       e.setAttribute('x', sessionEvents[_e].cord.x);
       e.setAttribute('y', sessionEvents[_e].cord.y);
+    }
+    if (sessionEvents[_e].type === 'highlight') {
+      e.setAttribute('text', sessionEvents[_e].text);
     }
     doc.lastChild.appendChild(e);
     doc.lastChild.appendChild(doc.createTextNode('\n'));
@@ -151,6 +177,14 @@ var playback = {
       case 'li':{
         console.log(sessionEvents[playback._position].id);
         document.getElementById(sessionEvents[playback._position].id).click();
+        var canvas = document.getElementById("canva");
+         var ctx = canvas.getContext("2d");
+
+         ctx.fillStyle = "rgb(200,0,0)";
+         ctx.fillRect (10, 10, 55, 50);
+
+         ctx.fillStyle = "rgba(0, 0, 200, 0.5)";
+         ctx.fillRect (30, 30, 55, 50);
         break;
       }
       case 'move':{
@@ -221,6 +255,11 @@ document.SESSION.record = function(){
   }];
   sessionLastEventTime = (new Date()).getTime();
   sessionIsRecording = true;
+
+  var spans = document.getElementsByTagName('span');
+  for (var i = 0; i < spans.length; i++) {
+    spans[i].addEventListener("mouseup", eventCatchers.highlight);
+  }
 };
 
 document.SESSION.play = function(){
@@ -278,6 +317,13 @@ var eventCatchers = {
   },
   move: function(e){
     if (sessionIsRecording) pushEvent('move', null, {"x": e.pageX,"y": e.pageY});
+  },
+  highlight: function(e){
+
+    if (sessionIsRecording){
+      console.log("ddd");
+      pushEvent('highlight', e.target.id, null, GetSelectedText());
+    } 
   }
 };
 
@@ -314,7 +360,6 @@ EVENTS.onSMILReady(function() {
   for (_i=0; _i<liTab.length; _i+=1) {
     if (liTab[_i].hasAttribute("smil")){
       liTab[_i].addEventListener("click", eventCatchers.li_click.bind(null, checkID(liTab[_i])));
-      console.log(checkID(liTab[_i]));
     }
   }
 
