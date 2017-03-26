@@ -79,6 +79,23 @@ var GetSelectedText = function () {
     }
 };
 
+var highlightText = function (noed, text) {
+    if (document.createRange && window.getSelection) {
+
+        var range = document.createRange();
+        textNode = document.getElementById(noed);
+
+        var nbr = textNode.textContent.indexOf(text);
+        range.setStart(textNode.firstChild, nbr);
+        range.setEnd(textNode.firstChild, nbr+text.length);
+
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    } 
+};
+
+
 // Adds an id to title elements if necessary and returns it
 var checkID = function(node){
   if (!node.hasAttribute('id')) {
@@ -127,7 +144,8 @@ var xmlToSessionEvents = function(xml){
       type: events[_e].getAttribute('type'),
       id: events[_e].getAttribute('id'),
       time: parseInt(events[_e].getAttribute('time'), 10),
-      cord : {x : events[_e].getAttribute('x'), y : events[_e].getAttribute('y')}
+      cord : {x : events[_e].getAttribute('x'), y : events[_e].getAttribute('y')},
+      text : events[_e].getAttribute('text')
     });
   }
   return session;
@@ -175,22 +193,17 @@ var playback = {
         document.getElementById(window.location.hash.slice(1)).click();
         break;
       case 'li':{
-        console.log(sessionEvents[playback._position].id);
         document.getElementById(sessionEvents[playback._position].id).click();
-        var canvas = document.getElementById("canva");
-         var ctx = canvas.getContext("2d");
-
-         ctx.fillStyle = "rgb(200,0,0)";
-         ctx.fillRect (10, 10, 55, 50);
-
-         ctx.fillStyle = "rgba(0, 0, 200, 0.5)";
-         ctx.fillRect (30, 30, 55, 50);
         break;
       }
       case 'move':{
         document.getElementById('im').style.top  = sessionEvents[playback._position].cord.y+"px";
         document.getElementById('im').style.left = sessionEvents[playback._position].cord.x+"px";
         document.getElementById('im').style.display = "block";
+        break;
+      }
+      case 'highlight':{
+        highlightText(sessionEvents[playback._position].id, sessionEvents[playback._position].text);
         break;
       }
       default:
@@ -258,7 +271,11 @@ document.SESSION.record = function(){
 
   var spans = document.getElementsByTagName('span');
   for (var i = 0; i < spans.length; i++) {
-    spans[i].addEventListener("mouseup", eventCatchers.highlight);
+    console.log(spans[i].id.length);
+    if (spans[i].id.length > 0) {
+      spans[i].addEventListener("mouseup", eventCatchers.highlight);
+    }
+    
   }
 };
 
@@ -319,11 +336,7 @@ var eventCatchers = {
     if (sessionIsRecording) pushEvent('move', null, {"x": e.pageX,"y": e.pageY});
   },
   highlight: function(e){
-
-    if (sessionIsRecording){
-      console.log("ddd");
-      pushEvent('highlight', e.target.id, null, GetSelectedText());
-    } 
+    if (sessionIsRecording) pushEvent('highlight', e.target.id, null, GetSelectedText());
   }
 };
 
