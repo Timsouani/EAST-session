@@ -15,6 +15,10 @@ document.SESSION = {
   jump: function(secs) {},// jumps at specified time
   load: function(str) {}, // loads session from string XML
   save: function() {}     // returns session as string XML
+  recordVoice : function() {},
+  stopRecordVoice : function(){},
+  downloadVoice : function(){},
+  playVoice : function(){}
 };
 
 var sessionEvents = [],           // session events list
@@ -164,6 +168,8 @@ var playback = {
     playback._lastTimeout = null;
     sessionIsRecording = false;
     sessionIsPaused = false;
+	document.SESSION.playVoice();
+    console.log("playing ...");
     playback.walk();
   },
 
@@ -259,6 +265,125 @@ var playback = {
  }
 };
 
+document.SESSION.recordVoice = function(){
+ // Initialize recorder
+            navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+            navigator.getUserMedia(
+            {
+                audio: true
+            },
+            function (e) {
+                console.log("user consent");
+
+                // creates the audio context
+                window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                context = new AudioContext();
+
+                // creates an audio node from the microphone incoming stream
+                mediaStream = context.createMediaStreamSource(e);
+
+                // https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createScriptProcessor
+                // bufferSize: the onaudioprocess event is called when the buffer is full
+                var bufferSize = 2048;
+                var numberOfInputChannels = 2;
+                var numberOfOutputChannels = 2;
+                if (context.createScriptProcessor) {
+                    recorder = context.createScriptProcessor(bufferSize, numberOfInputChannels, numberOfOutputChannels);
+                } else {
+                    recorder = context.createJavaScriptNode(bufferSize, numberOfInputChannels, numberOfOutputChannels);
+                }
+
+                recorder.onaudioprocess = function (e) {
+                    leftchannel.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+                    rightchannel.push(new Float32Array(e.inputBuffer.getChannelData(1)));
+                    recordingLength += bufferSize;
+                }
+
+                // we connect the recorder
+                mediaStream.connect(recorder);
+                recorder.connect(context.destination);
+            },
+                        function (e) {
+                            console.error(e);
+                        });
+
+};
+
+document.SESSION.stopRecordVoice = function(){
+            // stop recording
+            recorder.disconnect(context.destination);
+            mediaStream.disconnect(recorder);
+
+            // we flat the left and right channels down
+            // Float32Array[] => Float32Array
+            var leftBuffer = flattenArray(leftchannel, recordingLength);
+            var rightBuffer = flattenArray(rightchannel, recordingLength);
+            // we interleave both channels together
+            // [left[0],right[0],left[1],right[1],...]
+            var interleaved = interleave(leftBuffer, rightBuffer);
+
+            // we create our wav file
+            var buffer = new ArrayBuffer(44 + interleaved.length * 2);
+            var view = new DataView(buffer);
+
+            // RIFF chunk descriptor
+            writeUTFBytes(view, 0, 'RIFF');
+            view.setUint32(4, 44 + interleaved.length * 2, true);
+            writeUTFBytes(view, 8, 'WAVE');
+            // FMT sub-chunk
+            writeUTFBytes(view, 12, 'fmt ');
+            view.setUint32(16, 16, true); // chunkSize
+            view.setUint16(20, 1, true); // wFormatTag
+            view.setUint16(22, 2, true); // wChannels: stereo (2 channels)
+            view.setUint32(24, sampleRate, true); // dwSamplesPerSec
+            view.setUint32(28, sampleRate * 4, true); // dwAvgBytesPerSec
+            view.setUint16(32, 4, true); // wBlockAlign
+            view.setUint16(34, 16, true); // wBitsPerSample
+            // data sub-chunk
+            writeUTFBytes(view, 36, 'data');
+            view.setUint32(40, interleaved.length * 2, true);
+
+            // write the PCM samples
+            var index = 44;
+            var volume = 1;
+            for (var i = 0; i < interleaved.length; i++) {
+                view.setInt16(index, interleaved[i] * (0x7FFF * volume), true);
+                index += 2;
+            }
+
+            // our final blob
+            blob = new Blob([view], { type: 'audio/wav' });
+            console.log("Stop Recording");
+
+};
+
+	document.SESSION.downloadVoice= function(){
+	 if (blob == null) {
+					return;
+				}
+
+				var url = URL.createObjectURL(blob);
+
+				var a = document.createElement("a");
+				document.body.appendChild(a);
+				a.style = "display: none";
+				a.href = url;
+				a.download = "sample.wav";
+				a.click();
+				window.URL.revokeObjectURL(url);
+				console.log("document downloaded");
+	};
+
+	document.SESSION.playVoice = function(){
+	if (blob == null) {
+					return;
+				}
+
+				var url = window.URL.createObjectURL(blob);
+				var audio = new Audio(url);
+				audio.play();  
+	}
+
 // Public API
 document.SESSION.record = function(){
   sessionEvents = [{
@@ -267,6 +392,9 @@ document.SESSION.record = function(){
     time: 0
   }];
   sessionLastEventTime = (new Date()).getTime();
+  if(sessionIsRecording==true){
+  document.SESSION.recordVoice();  
+  }
   sessionIsRecording = true;
 
   var spans = document.getElementsByTagName('span');
@@ -393,6 +521,11 @@ EVENTS.onSMILReady(function() {
 
   recbtn.addEventListener('click', document.SESSION.record);
   exportbtn.addEventListener('click', function(){
+	  //Stop recording the voice   
+  document.SESSION.stopRecordVoice();
+
+  //Download the recorded voice
+  //document.SESSION.downloadVoice();  
     window.open('data:text/xml;base64,' +
                     window.btoa(unescape(
                       encodeURIComponent(sessionEventsToXml())
