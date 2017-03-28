@@ -14,7 +14,7 @@ document.SESSION = {
   pause: function() {},   // suspends/resume playing
   jump: function(secs) {},// jumps at specified time
   load: function(str) {}, // loads session from string XML
-  save: function() {}     // returns session as string XML
+  save: function() {},     // returns session as string XML
   recordVoice : function() {},
   stopRecordVoice : function(){},
   downloadVoice : function(){},
@@ -28,6 +28,18 @@ var sessionEvents = [],           // session events list
     sessionIsPaused = false,      // was the session playback suspended ?
     slideControlContainer = null, // "master" timeContainer for slide changing and current slide index
     id_cpt = 100;                 // counter for our id generator
+
+
+
+  var leftchannel = [];
+var rightchannel = [];
+var recorder = null;
+var recordingLength = 0;
+var volume = null;
+var mediaStream = null;
+      var sampleRate = 44100;
+      var context = null;
+      var blob = null;
 
 // adds an event to the session events list
 var pushEvent = function(event, id, cord = null, text = null){
@@ -58,23 +70,23 @@ var pushEvent = function(event, id, cord = null, text = null){
       });
     }
     else{
-      
+
       sessionEvents.push({
         type: event,
         id: id,
         time: interval
       });
-    
+
   }
     }
-    
+
 };
 
 var GetSelectedText = function () {
     if (window.getSelection) {  // all browsers, except IE before version 9
         var range = window.getSelection ();
         return range.toString();
-    } 
+    }
     else {
         if (document.selection.createRange) { // Internet Explorer
             var range = document.selection.createRange ();
@@ -96,7 +108,7 @@ var highlightText = function (noed, text) {
         var sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(range);
-    } 
+    }
 };
 
 
@@ -381,7 +393,7 @@ document.SESSION.stopRecordVoice = function(){
 
 				var url = window.URL.createObjectURL(blob);
 				var audio = new Audio(url);
-				audio.play();  
+				audio.play();
 	}
 
 // Public API
@@ -393,7 +405,7 @@ document.SESSION.record = function(){
   }];
   sessionLastEventTime = (new Date()).getTime();
   if(sessionIsRecording==true){
-  document.SESSION.recordVoice();  
+  document.SESSION.recordVoice();
   }
   sessionIsRecording = true;
 
@@ -403,7 +415,7 @@ document.SESSION.record = function(){
     if (spans[i].id.length > 0) {
       spans[i].addEventListener("mouseup", eventCatchers.highlight);
     }
-    
+
   }
 };
 
@@ -521,11 +533,11 @@ EVENTS.onSMILReady(function() {
 
   recbtn.addEventListener('click', document.SESSION.record);
   exportbtn.addEventListener('click', function(){
-	  //Stop recording the voice   
+	  //Stop recording the voice
   document.SESSION.stopRecordVoice();
 
   //Download the recorded voice
-  //document.SESSION.downloadVoice();  
+  //document.SESSION.downloadVoice();
     window.open('data:text/xml;base64,' +
                     window.btoa(unescape(
                       encodeURIComponent(sessionEventsToXml())
@@ -549,3 +561,33 @@ EVENTS.onSMILReady(function() {
 });
 
 }());
+function flattenArray(channelBuffer, recordingLength) {
+            var result = new Float32Array(recordingLength);
+            var offset = 0;
+            for (var i = 0; i < channelBuffer.length; i++) {
+                var buffer = channelBuffer[i];
+                result.set(buffer, offset);
+                offset += buffer.length;
+            }
+            return result;
+        }
+
+function interleave(leftChannel, rightChannel) {
+            var length = leftChannel.length + rightChannel.length;
+            var result = new Float32Array(length);
+
+            var inputIndex = 0;
+
+            for (var index = 0; index < length;) {
+                result[index++] = leftChannel[inputIndex];
+                result[index++] = rightChannel[inputIndex];
+                inputIndex++;
+            }
+            return result;
+        }
+
+function writeUTFBytes(view, offset, string) {
+            for (var i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
